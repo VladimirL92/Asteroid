@@ -1,67 +1,125 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 namespace Asteroids
 {
     public class Simulation
     {
         public List<Body> Bodies = new List<Body>();
-        private int ufoCount = 1;
-        private int asteroidCount = 3;
+        public Input Input = new Input();
         public float screenWidth = 16;
         public float screenHeight = 10;
-        private float ufoSpeed = 1;
+
+        public Body Player { get; private set; }
+
+        private int ufoCount = 1;
+        private int asteroidCount = 3;
+        private float ufoSpeed = 0.6f;
         private float asteroidSpeed = 0.3f;
+        private float spaceShipSpeed = 8f;
+        private float spaceShipAcceleration = 0.1f;
+        private float spaceShipSpeedRotation = 0.8f;
+
 
 
         public void Initialization()
         {
-            for (var i = 0; i < ufoCount; i++)
+            Player = new SpaceShip(Vector2.zero,0,1f);
+            Player.Position = Vector2.zero;
+            Player.Radius = Config.ShipRadius;
+            Bodies.Add(Player);
+
+            SpawnAsteroid();
+            SpawnUfo();
+        }
+
+        public void Update(float deltaTime)
+        {
+            MoveEntities(deltaTime);
+            SpawnAsteroid();
+            SpawnUfo();
+        }
+
+        public bool TryCollision(Body body, Body withBody)
+        {
+            if (body == withBody)
             {
-                var ufo = new Ufo();
+                return false;
+            }
+            var distance = Vector2.Distance(body.Position, withBody.Position);
+            if (distance < (body.Radius + withBody.Radius))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        void MoveEntities(float DeltaTime)
+        {
+            
+            foreach (var body in Bodies)
+            {
+
+                body.Update(this, DeltaTime);
+
+                foreach (var current in Bodies)
+                {
+
+                        if (TryCollision(body, current))
+                        {
+                        body.Collision(this, current);
+                        current.Collision(this, body);
+                        }
+                    
+                }
+                MoveRepeat(body);
+
+            }
+        }
+
+        public void MoveRepeat(Body body)
+        { 
+            var absX = Mathf.Abs(body.Position.x);
+            var absY = Mathf.Abs(body.Position.y);
+            if (absX > screenWidth / 2)
+            {
+                var newPos = new Vector2(-body.Position.x, body.Position.y);
+                body.Position = newPos;
+            }
+            if (absY > screenHeight / 2)
+            {
+                var newPos = new Vector2(body.Position.x, -body.Position.y);
+                body.Position = newPos;
+            }
+        }
+        public void SpawnUfo()
+        {
+            var count = Bodies.OfType<Ufo>().Count();
+            for (var i = count; i < ufoCount; i++)
+            {
+                var rPos = Random.insideUnitCircle * 5f;
                 var angle = Random.Range(0f, 360f);
-                var v = (Vector2)(Quaternion.AngleAxis(angle, Vector3.forward) * Vector3.right);
-                ufo.Direction = new Vector2(v.x, v.y);
-                ufo.Position = Random.insideUnitCircle * 5f;
-                ufo.Velosity = ufoSpeed;
+                var ufo = new Ufo(rPos, angle,ufoSpeed);
+                ufo.Radius = Config.UfoRadius;
                 Bodies.Add(ufo);
             }
-
-            for (var i = 0; i < asteroidCount; i++)
+        }
+        public void SpawnAsteroid()
+        {
+            var count = Bodies.OfType<Asteroid>().Count();
+            for (var i = count; i< asteroidCount; i++)
             {
-                var asteroid = new Asteroid();
+                var rPos = Random.insideUnitCircle * 5f;
                 var angle = Random.Range(0f, 360f);
-                var v = (Vector2)(Quaternion.AngleAxis(angle, Vector3.forward) * Vector3.right);
-                asteroid.Direction = new Vector2(v.x, v.y);
-                asteroid.Position = Random.insideUnitCircle * 5f;
-                asteroid.Velosity = asteroidSpeed;
+                var asteroid = new Asteroid(rPos, angle ,asteroidSpeed);
+                asteroid.Radius = Config.AsteroidRadius;
                 Bodies.Add(asteroid);
             }
         }
-        public void Update(float deltaTime)
-        {
-            foreach (var body in Bodies)
-            {
-                var absX = Mathf.Abs(body.Position.x);
-                var absY = Mathf.Abs(body.Position.y);
 
-                if (absX > screenWidth / 2)
-                {
-                    var newPos = new Vector2(-body.Position.x, body.Position.y);
-                    body.Position = newPos;
-                }
-
-                if (absY > screenHeight / 2)
-                {
-                    var newPos = new Vector2(body.Position.x, -body.Position.y);
-                    body.Position = newPos;
-                }
-
-                body.Position += body.Direction * deltaTime * body.Velosity; 
-
-
-            }
-        }
     }
 }

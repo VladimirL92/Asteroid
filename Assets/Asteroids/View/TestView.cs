@@ -1,19 +1,31 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Asteroids;
 
 public class TestView : MonoBehaviour
 {
-    private Simulation sim;
+    public Asteroids. Simulation sim;
+    public GameObject Player;
+
     void Start()
     {
-        sim = new Simulation();
+        sim = new Asteroids.Simulation();
         sim.Initialization();
+        
     }
     private void Update()
     {
+        var input = sim.Input;
         sim.Update(Time.deltaTime);
+        Player.transform.position = sim.Bodies[0].Position;
+        Player.transform.rotation = Quaternion.Euler(0,0,sim.Bodies[0].Rotation);
+
+        input.Acceleration = Input.GetKey(KeyCode.W);
+        input.TurnLeft = Input.GetKey(KeyCode.A);
+        input.TurnRight = Input.GetKey(KeyCode.D);
+
+        if (Input.GetKeyDown(KeyCode.E)) input.BulletShot = true;
+        if (Input.GetKeyDown(KeyCode.Q)) input.LaserShot = true;
     }
 
     private void OnDrawGizmos()
@@ -26,8 +38,7 @@ public class TestView : MonoBehaviour
         Gizmos.DrawWireCube(Vector3.zero, size);
         foreach (var body in sim.Bodies)
         {
-            Gizmos.DrawWireSphere(body.Position, 1);
-            UnityEditor.Handles.Label(body.Position, "" + body.Direction);
+            Gizmos.DrawWireSphere(body.Position, body.Radius);
         }
     }
 }

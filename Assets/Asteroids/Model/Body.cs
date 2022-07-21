@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Asteroids
 {
-    public class Body
+    public abstract class Body
     {
         public Vector2 Position;
         public float Radius;
+        public float Rotation;
         public Vector2 Direction;
-        public float Velosity;
+        public float Velocity;
+        public abstract void Update(Simulation simulation, float delta);
+        public abstract void Collision(Simulation simulation, Body bodyCollision);
     }
 }
